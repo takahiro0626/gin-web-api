@@ -20,6 +20,19 @@ func setupRouter() *gin.Engine {
 		})
 	})
 
+	router.GET("/books", func(context *gin.Context) {
+		price := context.Query("price")
+		published := context.Query("published")
+		context.JSON(http.StatusOK, gin.H{
+			"status": gin.H{
+				"code":   http.StatusOK,
+				"status": "success",
+			},
+			"price": price,
+			"published": published,
+		})
+	})
+
 	return router
 }
 
