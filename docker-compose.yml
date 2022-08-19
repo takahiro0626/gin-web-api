@@ -1,0 +1,18 @@
+version: '3.9'
+services:
+  db:
+    image: postgres:14.5-bullseye
+    container_name: postgres
+    environment:
+      POSTGRES_USER: gin
+      POSTGRES_PASSWORD: gin
+      PGPASSWORD: gin
+      POSTGRES_DB: gin
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres:/var/lib/postgresql/data
+
+volumes:
+  postgres:
