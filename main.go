@@ -1,10 +1,12 @@
 package main
 
 import (
+	"database/sql"
+	log "github.com/sirupsen/logrus"
 	"net/http"
-	// log "github.com/sirupsen/logrus"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/lib/pq"
 )
 
 func setupRouter() *gin.Engine {
@@ -48,13 +50,30 @@ func setupRouter() *gin.Engine {
 	return router
 }
 
+func initDB() *sql.DB {
+	database, err := sql.Open("postgres", "user=gin password=gin host=localhost port=5432 dbname=gin sslmode=disable")
+	if err != nil {
+		log.Info("[error]: fail connect database: %v\n", err)
+	}
+
+	err = database.Ping()
+	if err != nil {
+		log.Info("[error]: fail connect database: %v\n", err)
+	}
+
+	log.Info("success connect database")
+	return database
+}
+
 func main() {
+	db := initDB()
+	defer db.Close()
 	router := setupRouter()
 	router.Run(":8080")
 }
 
 type BookRequest struct {
-	Title  string `json:"title"`
-	Price  int    `json:"price"`
-	Published int   `json:"published"`
+	Title     string `json:"title"`
+	Price     int    `json:"price"`
+	Published int    `json:"published"`
 }
