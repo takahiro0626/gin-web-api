@@ -1,15 +1,16 @@
 package main
 
 import (
-	"database/sql"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 
+	"gorm.io/driver/postgres"
+  	"gorm.io/gorm"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 )
 
-func setupRouter() *gin.Engine {
+func setupRouter(db *gorm.DB) *gin.Engine {
 	router := gin.Default()
 
 	router.GET("/books/:id", func(context *gin.Context) {
@@ -37,26 +38,27 @@ func setupRouter() *gin.Engine {
 	})
 
 	router.POST("/books", func(context *gin.Context) {
-		var json BookRequest
-		if err := context.ShouldBindJSON(&json); err != nil {
-			context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		context.JSON(http.StatusOK,
-			gin.H{
-				"title": json.Title, "price": json.Price, "published": json.Published})
+		Books := Books{}
+		Books.Title = "test1"
+		Books.Price = 200
+		db.Create(&Books)
+
+		// var json BookRequest
+		// if err := context.ShouldBindJSON(&json); err != nil {
+		// 	context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		// 	return
+		// }
+		// context.JSON(http.StatusOK,
+		// 	gin.H{
+		// 		"title": json.Title, "price": json.Price, "published": json.Published})
 	})
 
 	return router
 }
 
-func initDB() *sql.DB {
-	database, err := sql.Open("postgres", "user=gin password=gin host=localhost port=5432 dbname=gin sslmode=disable")
-	if err != nil {
-		log.Info("[error]: fail connect database: %v\n", err)
-	}
-
-	err = database.Ping()
+func initDB() *gorm.DB {
+	dsn := "host=localhost user=gin password=gin dbname=gin port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+	database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Info("[error]: fail connect database: %v\n", err)
 	}
@@ -67,13 +69,12 @@ func initDB() *sql.DB {
 
 func main() {
 	db := initDB()
-	defer db.Close()
-	router := setupRouter()
+	router := setupRouter(db)
 	router.Run(":8080")
 }
 
-type BookRequest struct {
+type Books struct {
+	Id      int `json:"id"`
 	Title     string `json:"title"`
 	Price     int    `json:"price"`
-	Published int    `json:"published"`
 }
