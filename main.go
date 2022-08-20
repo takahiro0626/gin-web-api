@@ -71,8 +71,32 @@ func setupRouter(db *gorm.DB) *gin.Engine {
 		}
 		Books.Id = id
 		db.First(&Books)
-		db.Delete(&Books) 
+		db.Delete(&Books)
 	})
+
+	router.PUT("/books/:id", func(context *gin.Context) {
+		var json Books
+
+		bookId := context.Param("id")
+		Books := Books{}
+		id, err := strconv.Atoi(bookId)
+		if err != nil {
+		    log.Error(err)
+			return
+		}
+		Books.Id = id
+		db.First(&Books)
+
+		if err := context.ShouldBindJSON(&json); err != nil {
+			context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		} else {
+			Books.Title = json.Title
+			Books.Price = json.Price
+			db.Save(&Books)
+		}
+	})
+
 
 	return router
 }
