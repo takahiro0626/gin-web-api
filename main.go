@@ -3,6 +3,7 @@ package main
 import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"strconv"
 
 	"gorm.io/driver/postgres"
   	"gorm.io/gorm"
@@ -38,10 +39,17 @@ func setupRouter(db *gorm.DB) *gin.Engine {
 	})
 
 	router.POST("/books", func(context *gin.Context) {
-		Books := Books{}
-		Books.Title = "test1"
-		Books.Price = 200
-		db.Create(&Books)
+		var json Books
+
+		if err := context.ShouldBindJSON(&json); err != nil {
+			context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		} else {
+			Books := Books{}
+			Books.Title = json.Title
+			Books.Price = json.Price
+			db.Create(&Books)
+		}
 
 		// var json BookRequest
 		// if err := context.ShouldBindJSON(&json); err != nil {
@@ -51,6 +59,19 @@ func setupRouter(db *gorm.DB) *gin.Engine {
 		// context.JSON(http.StatusOK,
 		// 	gin.H{
 		// 		"title": json.Title, "price": json.Price, "published": json.Published})
+	})
+
+	router.DELETE("/books/:id", func(context *gin.Context) {
+		bookId := context.Param("id")
+		Books := Books{}
+		id, err := strconv.Atoi(bookId)
+		if err != nil {
+		    log.Error(err)
+			return
+		}
+		Books.Id = id
+		db.First(&Books)
+		db.Delete(&Books) 
 	})
 
 	return router
