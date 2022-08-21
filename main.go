@@ -15,13 +15,22 @@ func setupRouter(db *gorm.DB) *gin.Engine {
 	router := gin.Default()
 
 	router.GET("/books/:id", func(context *gin.Context) {
-		id := context.Param("id")
+		bookId := context.Param("id")
+		Books := Books{}
+		id, err := strconv.Atoi(bookId)
+		if err != nil {
+		    log.Error(err)
+			return
+		}
+		Books.Id = id
+		db.First(&Books)
 		context.JSON(http.StatusOK, gin.H{
 			"status": gin.H{
 				"code":   http.StatusOK,
 				"status": "success",
 			},
-			"id": id,
+			"id": &Books.Id,
+			"title": &Books.Title,
 		})
 	})
 
