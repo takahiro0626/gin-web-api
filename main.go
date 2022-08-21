@@ -1,14 +1,16 @@
 package main
 
 import (
+	"errors"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"strconv"
 
-	"gorm.io/driver/postgres"
-  	"gorm.io/gorm"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func setupRouter(db *gorm.DB) *gin.Engine {
@@ -19,7 +21,7 @@ func setupRouter(db *gorm.DB) *gin.Engine {
 		Books := Books{}
 		id, err := strconv.Atoi(bookId)
 		if err != nil {
-		    log.Error(err)
+			log.Error(err)
 			return
 		}
 		Books.Id = id
@@ -29,7 +31,7 @@ func setupRouter(db *gorm.DB) *gin.Engine {
 				"code":   http.StatusOK,
 				"status": "success",
 			},
-			"id": &Books.Id,
+			"id":    &Books.Id,
 			"title": &Books.Title,
 		})
 	})
@@ -60,7 +62,7 @@ func setupRouter(db *gorm.DB) *gin.Engine {
 		Books := Books{}
 		id, err := strconv.Atoi(bookId)
 		if err != nil {
-		    log.Error(err)
+			log.Error(err)
 			return
 		}
 		Books.Id = id
@@ -75,7 +77,7 @@ func setupRouter(db *gorm.DB) *gin.Engine {
 		Books := Books{}
 		id, err := strconv.Atoi(bookId)
 		if err != nil {
-		    log.Error(err)
+			log.Error(err)
 			return
 		}
 		Books.Id = id
@@ -88,6 +90,34 @@ func setupRouter(db *gorm.DB) *gin.Engine {
 			Books.Title = json.Title
 			Books.Price = json.Price
 			db.Save(&Books)
+		}
+	})
+
+	router.POST("/signup", func(context *gin.Context) {
+		var json User
+
+		// user := User{}
+		// db.Where("email = ?", json.Email).First(&user)
+		// if user.Id != 0 {
+		// 	err := errors.New("Same Email Registered")
+		// 	log.Error(err)
+		// }
+
+		hash, err := PasswordEncrypt(json.Password)
+		if err != nil {
+			err := errors.New("Fail Password Crypt")
+			log.Error(err)
+		}
+
+		if err := context.ShouldBindJSON(&json); err != nil {
+			context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		} else {
+
+			create_user := User{}
+			create_user.Mail = json.Mail
+			create_user.Password = hash
+			db.Save(&create_user)
 		}
 	})
 
@@ -105,6 +135,11 @@ func initDB() *gorm.DB {
 	return database
 }
 
+func PasswordEncrypt(password string) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return string(hash), err
+}
+
 func main() {
 	db := initDB()
 	router := setupRouter(db)
@@ -112,7 +147,13 @@ func main() {
 }
 
 type Books struct {
-	Id      int `json:"id"`
-	Title     string `json:"title"`
-	Price     int    `json:"price"`
+	Id    int    `json:"id"`
+	Title string `json:"title"`
+	Price int    `json:"price"`
+}
+
+type User struct {
+	Id       int    `json:"id"`
+	Mail     string `json:"mail"`
+	Password string `json:"password"`
 }
