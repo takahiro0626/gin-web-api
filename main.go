@@ -35,16 +35,10 @@ func setupRouter(db *gorm.DB) *gin.Engine {
 	})
 
 	router.GET("/books", func(context *gin.Context) {
-		price := context.Query("price")
-		published := context.Query("published")
-		context.JSON(http.StatusOK, gin.H{
-			"status": gin.H{
-				"code":   http.StatusOK,
-				"status": "success",
-			},
-			"price":     price,
-			"published": published,
-		})
+		title := context.Query("title")
+		var books []Books
+		db.Where("title LIKE '%" + title + "%'").Find(&books)
+		context.JSON(http.StatusOK, gin.H{"books": books})
 	})
 
 	router.POST("/books", func(context *gin.Context) {
@@ -59,15 +53,6 @@ func setupRouter(db *gorm.DB) *gin.Engine {
 			Books.Price = json.Price
 			db.Create(&Books)
 		}
-
-		// var json BookRequest
-		// if err := context.ShouldBindJSON(&json); err != nil {
-		// 	context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		// 	return
-		// }
-		// context.JSON(http.StatusOK,
-		// 	gin.H{
-		// 		"title": json.Title, "price": json.Price, "published": json.Published})
 	})
 
 	router.DELETE("/books/:id", func(context *gin.Context) {
@@ -105,7 +90,6 @@ func setupRouter(db *gorm.DB) *gin.Engine {
 			db.Save(&Books)
 		}
 	})
-
 
 	return router
 }
